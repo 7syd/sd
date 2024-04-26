@@ -1,0 +1,110 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from faker import Faker
+import warnings
+warnings.filterwarnings("ignore")
+
+np.random.seed(30)
+fake = Faker()
+
+
+num_student = 60
+student_data = {'Student_ID': np.arange(1,num_student + 1),
+               'Name':[fake.name() for _ in range(num_student)]}
+
+
+Score_data = {'Student_ID':np.arange(1,num_student + 1),
+               'DSA_score':np.random.randint(0,100,size=num_student),
+               'FDS_score':np.random.randint(0,100,size=num_student),
+               'DM_score':np.random.randint(0,100,size=num_student),
+               'AI_score':np.random.randint(0,100,size=num_student)
+               }
+df = pd.DataFrame(student_data).merge(pd.DataFrame(Score_data),on='Student_ID')
+
+subjects = ['DSA_score', 'FDS_score','DM_score', 'AI_score']
+for subject in subjects:
+    df.loc[df.sample(frac=0.1).index, subject] = np.nan  
+
+outlier_fraction = 0.1  
+outliers_indices = df.sample(frac=outlier_fraction).index
+for subject in ['DSA_score', 'FDS_score', 'DM_score', 'AI_score']:
+    df.loc[outliers_indices, subject] = np.random.randint(150, 200, size=len(outliers_indices))
+
+df.shape
+
+df.columns
+
+df.describe()
+
+df.info()
+
+df.isnull().sum()
+
+df.fillna(df.mean(),inplace=True)
+
+df.isnull().sum()
+
+plt.figure(figsize=(20, 10))
+sns.boxplot(data=df[['DSA_score', 'FDS_score', 'DM_score', 'AI_score']])
+plt.title('Boxplot for Subjects')
+plt.show()
+
+def find_outliers(column):
+    Q1 = column.quantile(0.25)
+    Q3 = column.quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    outliers = (column < lower_bound) | (column > upper_bound)
+    return outliers
+
+outliers_df = df.select_dtypes(include=np.number).apply(find_outliers)
+sum_of_outliers = outliers_df.sum()
+print("Sum of outliers in each column:")
+print(sum_of_outliers)
+
+df.shape
+
+df = df.loc[~outliers_df.any(axis=1)]
+
+df.shape
+
+df
+
+float_columns = ['DSA_score', 'FDS_score', 'DM_score', 'AI_score']
+df[float_columns] = df[float_columns].round().astype(int)
+
+
+total_marks = 400  
+df['Total'] = df[['DSA_score', 'FDS_score', 'DM_score', 'AI_score']].sum(axis=1)
+
+df
+
+df['SGPA'] = (df['Total'] / total_marks) * 10
+df['SGPA'] = df['SGPA'].round(1)
+
+df
+
+from scipy import stats
+
+total_data = df['Total']
+
+skewness_before = stats.skew(total_data)
+print("Skewness Before Transformation = ",skewness_before)
+
+transformed_data,lamda_value = stats.boxcox(total_data)
+skewness_after = stats.skew(transformed_data)
+print("Skewness After Transformation = ",skewness_after)
+
+from scipy import stats
+
+total_data = df['Total']
+
+skewness_before = stats.skew(total_data)
+print("Skewness Before Transformation = ",skewness_before)
+
+transformed_data,lamda_value = stats.boxcox(total_data)
+skewness_after = stats.skew(transformed_data)
+print("Skewness After Transformation = ",skewness_after)
