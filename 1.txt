@@ -1,0 +1,31 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from seaborn import load_dataset
+import warnings
+warnings.filterwarnings('ignore')
+
+
+df = load_dataset('titanic')
+
+df
+
+df.info()
+
+df.isnull().sum()
+
+df['age'].fillna(df['age'].mean(),axis = 0,inplace = True)
+df.drop('deck',axis = 1,inplace = True)
+cols = ['embarked','embark_town']
+for col in cols:
+    df[col].fillna(df[col].mode()[0],inplace = True)
+
+
+df.isnull().sum()
+
+df['age'] = df['age'].astype('int')
+df
+
+df = pd.get_dummies(df,columns=['who'])
+df
